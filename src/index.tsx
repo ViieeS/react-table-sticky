@@ -48,29 +48,34 @@ export function getStickyValue(column: Column): null | 'left' | 'right' {
   return null;
 }
 
-export function columnIsLastLeftSticky(columnId: Column['id'], columns: any): boolean {
+export function columnIsLastLeftSticky(columnId: Column['id'], columns: any[]): boolean {
   const index = columns.findIndex(({ id }: any) => id === columnId);
-  const column = columns[index];
-  const nextColumn = columns[index + 1];
-  const columnIsLeftSticky = getStickyValue(column) === 'left';
-  const nextColumnIsLeftSticky = nextColumn && getStickyValue(nextColumn) === 'left';
-  return columnIsLeftSticky && !nextColumnIsLeftSticky;
+  const lastLeftStickyIndex = columns.concat().reverse().findIndex((column) => getStickyValue(column) === 'left');
+  return index === lastLeftStickyIndex;
 }
 
-export function columnIsFirstRightSticky(columnId: Column['id'], columns: any): boolean {
+export function columnIsFirstRightSticky(columnId: Column['id'], columns: any[]): boolean {
   const index = columns.findIndex(({ id }: any) => id === columnId);
-  const column = columns[index];
-  const prevColumn = columns[index - 1];
-  const columnIsRightSticky = getStickyValue(column) === 'right';
-  const prevColumnIsRightSticky = prevColumn && getStickyValue(prevColumn) === 'right';
-  return columnIsRightSticky && !prevColumnIsRightSticky;
+  const firstRightStickyIndex = columns.findIndex((column) => getStickyValue(column) === 'right');
+  return index === firstRightStickyIndex;
+}
+
+export function getMarginLeft(columnId: Column['id'], columns: any) {
+  const currentIndex = columns.findIndex(({ id }: any) => id === columnId);
+  let leftMargin = 0;
+  for (let i = currentIndex - 1; i >= 0; i -= 1) {
+    if (columns[i].isVisible !== false && columns[i].sticky === 'left') {
+      leftMargin += columns[i].width;
+    }
+  }
+  return leftMargin;
 }
 
 export function getMarginRight(columnId: Column['id'], columns: any) {
   const currentIndex = columns.findIndex(({ id }: any) => id === columnId);
   let rightMargin = 0;
   for (let i = currentIndex + 1; i < columns.length; i += 1) {
-    if (columns[i].isVisible !== false) {
+    if (columns[i].isVisible !== false && columns[i].sticky === 'right') {
       rightMargin += columns[i].width;
     }
   }
@@ -109,7 +114,7 @@ function getStickyProps(header: any, instance: any) {
     const headers = findHeadersSameLevel(header, instance.flatHeaders);
 
     const margin = sticky === 'left'
-      ? header.totalLeft
+      ? getMarginLeft(header.id, headers)
       : getMarginRight(header.id, headers);
 
     style = {
