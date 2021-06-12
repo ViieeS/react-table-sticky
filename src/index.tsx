@@ -10,6 +10,17 @@ interface Column {
   totalLeft: number;
 }
 
+export function findLastIndex<T>(array: Array<T>, predicate: (value: T, index: number, obj: T[]) => boolean): number {
+  let l = array.length;
+  while (l) {
+    l -= 1;
+    if (predicate(array[l], l, array)) {
+      return l;
+    }
+  }
+  return -1;
+}
+
 export const checkErrors = (columns: Column[]) => {
   const hasGroups = !!columns.find((column: Column) => column.parent);
   const stickyColumnsWithoutGroup = columns.filter((column: Column) => column.sticky && !column.parent).map(({ Header }) => `'${Header}'`);
@@ -50,7 +61,7 @@ export function getStickyValue(column: Column): null | 'left' | 'right' {
 
 export function columnIsLastLeftSticky(columnId: Column['id'], columns: any[]): boolean {
   const index = columns.findIndex(({ id }: any) => id === columnId);
-  const lastLeftStickyIndex = columns.concat().reverse().findIndex((column) => getStickyValue(column) === 'left');
+  const lastLeftStickyIndex = findLastIndex(columns, (column) => getStickyValue(column) === 'left');
   return index === lastLeftStickyIndex;
 }
 
